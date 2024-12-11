@@ -1,3 +1,4 @@
 # Required Python libraries
 pandas
 scikit-learn
+pytest
