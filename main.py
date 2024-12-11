@@ -1,3 +1,4 @@
+## main.py
 # Entry point for the pipeline
 
 import pandas as pd
@@ -8,7 +9,13 @@ from model_training import train_and_evaluate_model
 
 def main():
     dataset_path = "path/to/dataset.csv"
-    data = preprocess_dataset(dataset_path)
+    whitelist_path = "path/to/whitelist.txt"
+
+    # Load whitelist domains
+    with open(whitelist_path, "r") as file:
+        whitelist = set(domain.strip() for domain in file.readlines())
+
+    data = preprocess_dataset(dataset_path, whitelist)
 
     features = []
     for _, row in data.iterrows():

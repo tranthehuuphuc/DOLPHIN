@@ -1,13 +1,15 @@
+## preprocess.py
 # Handles data preprocessing
 
 import pandas as pd
 
-def preprocess_dataset(file_path):
+def preprocess_dataset(file_path, whitelist):
     """
     Reads a dataset from a CSV file and preprocesses it.
 
     Args:
         file_path (str): Path to the CSV file.
+        whitelist (set): Set of whitelisted domain names to exclude.
 
     Returns:
         pd.DataFrame: Cleaned dataset.
@@ -21,5 +23,8 @@ def preprocess_dataset(file_path):
     # Drop invalid rows
     data.dropna(subset=["domain_name", "label"], inplace=True)
     data = data[data["domain_name"].str.contains("\\.")]
+
+    # Exclude whitelisted domains
+    data = data[~data["domain_name"].isin(whitelist)]
 
     return data
