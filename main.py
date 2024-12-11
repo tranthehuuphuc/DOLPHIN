@@ -9,7 +9,7 @@ from model_training import train_and_evaluate_model
 
 def main():
     dataset_path = "path/to/dataset.csv"
-    whitelist_path = "path/to/whitelist.txt"
+    whitelist_path = "whitelist.txt"
 
     # Load whitelist domains
     with open(whitelist_path, "r") as file:
