@@ -8,7 +8,8 @@ from feature_extraction import compute_phonics_features
 from model_training import train_and_evaluate_model
 
 def main():
-    dataset_path = "path/to/dataset.csv"
+    # dataset_path = "path/to/dataset.csv"
+    dataset_path = "1000.txt"
     whitelist_path = "whitelist.txt"
 
     # Load whitelist domains
