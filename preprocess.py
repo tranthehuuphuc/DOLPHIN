@@ -1,64 +1,43 @@
-## preprocess.py
-# Handles data preprocessing
+# preprocess.py
 
 import pandas as pd
+from typing import Set
 
-def preprocess_dataset(file_path, whitelist):
+def preprocess_dataset(dataset_path: str, whitelist: Set[str]) -> pd.DataFrame:
     """
-    Reads a dataset from a CSV file and preprocesses it.
-
+    Preprocess the dataset by filtering and cleaning domain data.
+    
     Args:
-        file_path (str): Path to the CSV file.
-        whitelist (set): Set of whitelisted domain names to exclude.
-
+        dataset_path (str): Path to the input dataset
+        whitelist (Set[str]): Set of whitelisted domains
+    
     Returns:
-        pd.DataFrame: Cleaned dataset.
+        pd.DataFrame: Preprocessed dataset with filtered domains
     """
-    # data = pd.read_csv(file_path)
+    try:
+        # Try reading as CSV first
+        data = pd.read_csv(dataset_path, names=["domain_name", "label"])
+    except Exception as e:
+        print(f"Error reading as CSV: {e}. Attempting to read as text file...")
+        try:
+            # If not CSV, try reading as text file with regex for whitespace separator
+            data = pd.read_csv(dataset_path, header=None, names=["domain_name", "label"], sep=r'\s+', engine="python")
+        except Exception as e:
+            print(f"Error reading dataset as text file: {e}")
+            raise
 
-    # # Validate columns
-    # if "domain_name" not in data.columns or "label" not in data.columns:
-    #     raise ValueError("Dataset must contain 'domain_name' and 'label' columns.")
+    # Ensure label column exists
+    if "label" not in data.columns or data["label"].isnull().all():
+        print("No labels found in dataset. Assigning default labels (0).")
+        data["label"] = 0  # Default label assignment
 
-    # # Drop invalid rows
-    # data.dropna(subset=["domain_name", "label"], inplace=True)
-    # data = data[data["domain_name"].str.contains("\\.")]
+    # Preprocess domain names
+    data['domain_name'] = data['domain_name'].str.lower().str.strip()
 
-    # # Exclude whitelisted domains
-    # data = data[~data["domain_name"].isin(whitelist)]
+    # Filter out domains in whitelist
+    data = data[~data['domain_name'].isin(whitelist)]
 
-    # return data
-
-    if file_path.endswith('.csv'):
-        # data = pd.read_csv(file_path)
-
-        # # Validate columns
-        # if "domain_name" not in data.columns or "label" not in data.columns:
-        #     raise ValueError("Dataset must contain 'domain_name' and 'label' columns.")
-
-        # # Drop invalid rows
-        # data.dropna(subset=["domain_name", "label"], inplace=True)
-        # data = data[data["domain_name"].str.contains("\\.")]
-        data = pd.read_csv(file_path)
-
-        # Validate columns
-        required_columns = {"domain", "class"}
-        if not required_columns.issubset(data.columns):
-            raise ValueError(f"Dataset must contain the following columns: {required_columns}")
-
-        # Drop invalid rows
-        data.dropna(subset=["domain", "class"], inplace=True)
-        data = data[data["domain"].str.contains("\\.")]
-
-    elif file_path.endswith('.txt'):
-        with open(file_path, 'r') as file:
-            domain_names = [line.strip() for line in file if line.strip()]
-        data = pd.DataFrame({"domain_name": domain_names, "label": -1})  # Assign -1 as default label for TXT files
-
-    else:
-        raise ValueError("Unsupported file format. Please use .csv or .txt files.")
-
-    # Exclude whitelisted domains
-    data = data[~data["domain_name"].isin(whitelist)]
+    # Remove any rows with missing data
+    data = data.dropna()
 
     return data

@@ -1,157 +1,12 @@
-## dolphin_patterns.py
-# This file defines DOLPHIN patterns and implements the greedy matching algorithm
-
-# DOLPHIN patterns definition
-DOLPHIN_PATTERNS = {
-    "vowels": {
-        1: ["a", "e", "i", "o", "u"],
-        2: ["ai", "al", "ar", "au", "aw", "ay", "ea", "ee", "ei", "er", "eu", "ew", "ey", "ia", "ie", "ir", "oa", "oe", "oi", "oo", "or", "ou", "ow", "oy", "ue", "ui", "ur"],
-        3: ["air", "ear", "eer", "igh", "ign", "ing", "ion", "oew", "ore", "our", "ure"]
-    },
-    "consonants": {
-        1: ["b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
-        2: ["bl", "br", "ch", "ck", "cl", "cr", "dr", "fl", "fr", "gh", "gl", "gr", "kn", "ld", "lk", "mb", "mn", "mp", "nd", "ng", "nk", "nt", "ph", "pl", "pn", "pr", "ps", "qe", "qu", "rh", "sc", "sh", "sk", "sl", "sm", "sn", "sp", "st", "sw", "th", "tr", "wh", "wr"],
-        3: ["dge", "gue", "nch", "que", "shr", "spl", "spr", "squ", "str", "tch", "thr"]
-    }
-}
-
-def greedy_match(domain_name, patterns):
-    """
-    Splits a domain name into DOLPHIN patterns using a greedy matching algorithm.
-
-    Args:
-        domain_name (str): The domain name to process.
-        patterns (dict): The DOLPHIN patterns for vowels and consonants.
-
-    Returns:
-        list: A list of tuples (matched substring, its type).
-    """
-    i = 0  # Start index
-    length = len(domain_name)
-    result = []
-
-    while i < length:
-        match_found = False
-
-        # Try to match trigraphs, digraphs, and single characters in order
-        for size in [3, 2, 1]:
-            if i + size > length:
-                continue
-
-            substring = domain_name[i:i + size]
-
-            # Check for vowels
-            if substring in patterns["vowels"].get(size, []):
-                result.append((substring, "vowel"))
-                i += size
-                match_found = True
-                break
-
-            # Check for consonants
-            elif substring in patterns["consonants"].get(size, []):
-                result.append((substring, "consonant"))
-                i += size
-                match_found = True
-                break
-
-        # Handle unmatched characters (neutral)
-        if not match_found:
-            result.append((domain_name[i], "neutral"))
-            i += 1
-
-    return result
-
-## feature_extraction.py
-# This file computes features based on DOLPHIN patterns
-
-def compute_phonics_features(matches):
-    """
-    Computes phonics-based features from matched patterns.
-
-    Args:
-        matches (list): List of tuples (substring, type).
-
-    Returns:
-        dict: Phonics-based features.
-    """
-    vowels = [item for item in matches if item[1] == "vowel"]
-    consonants = [item for item in matches if item[1] == "consonant"]
-    total_length = len(matches)
-
-    vowel_ratio = len(vowels) / total_length if total_length > 0 else 0
-    repeated_chars = len(set(item[0] for item in matches if matches.count(item) > 1)) / total_length
-    consecutive_consonants = sum(1 for i in range(len(consonants) - 1)
-                                 if consonants[i][0] + consonants[i + 1][0]) / total_length
-
-    return {
-        "vowel_ratio": vowel_ratio,
-        "repeated_chars": repeated_chars,
-        "consecutive_consonants": consecutive_consonants
-    }
-
-## preprocess.py
-# Handles data preprocessing
+# main.py
 
 import pandas as pd
+import sys
+import os
 
-def preprocess_dataset(file_path, whitelist):
-    """
-    Reads a dataset from a CSV file and preprocesses it.
-
-    Args:
-        file_path (str): Path to the CSV file.
-        whitelist (set): Set of whitelisted domain names to exclude.
-
-    Returns:
-        pd.DataFrame: Cleaned dataset.
-    """
-    data = pd.read_csv(file_path)
-
-    # Validate columns
-    if "domain_name" not in data.columns or "label" not in data.columns:
-        raise ValueError("Dataset must contain 'domain_name' and 'label' columns.")
-
-    # Drop invalid rows
-    data.dropna(subset=["domain_name", "label"], inplace=True)
-    data = data[data["domain_name"].str.contains("\\.")]
-
-    # Exclude whitelisted domains
-    data = data[~data["domain_name"].isin(whitelist)]
-
-    return data
-
-## model_training.py
-# Handles training and evaluation of models
-
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
-
-def train_and_evaluate_model(features):
-    """
-    Trains and evaluates a Random Forest model.
-
-    Args:
-        features (pd.DataFrame): Features and labels.
-
-    Returns:
-        RandomForestClassifier: Trained model.
-    """
-    X = features.drop(columns=["label"])
-    y = features["label"]
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    model = RandomForestClassifier(random_state=42)
-    model.fit(X_train, y_train)
-
-    predictions = model.predict(X_test)
-    print(classification_report(y_test, predictions))
-
-    return model
-
-## main.py
-# Entry point for the pipeline
+# Ensure the current directory is in the Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
 
 from preprocess import preprocess_dataset
 from dolphin_patterns import greedy_match, DOLPHIN_PATTERNS
@@ -159,77 +14,328 @@ from feature_extraction import compute_phonics_features
 from model_training import train_and_evaluate_model
 
 def main():
-    dataset_path = "path/to/dataset.csv"
-    whitelist_path = "path/to/whitelist.txt"
+    # Default paths (can be modified as needed)
+    dataset_path = "1000.txt"
+    whitelist_path = "whitelist.txt"
 
     # Load whitelist domains
-    with open(whitelist_path, "r") as file:
-        whitelist = set(domain.strip() for domain in file.readlines())
+    try:
+        with open(whitelist_path, "r") as file:
+            whitelist = set(domain.strip() for domain in file.readlines())
+    except FileNotFoundError:
+        print(f"Whitelist file {whitelist_path} not found. Continuing with empty whitelist.")
+        whitelist = set()
 
-    data = preprocess_dataset(dataset_path, whitelist)
+    # Preprocess the dataset
+    try:
+        data = preprocess_dataset(dataset_path, whitelist)
+    except FileNotFoundError:
+        print(f"Dataset file {dataset_path} not found. Please check the file path.")
+        return
+    except Exception as e:
+        print(f"Error processing dataset: {e}")
+        return
 
+    # Extract features
     features = []
     for _, row in data.iterrows():
+        # Apply DOLPHIN pattern matching
         matches = greedy_match(row["domain_name"], DOLPHIN_PATTERNS)
+        
+        # Compute phonics features
         phonics_features = compute_phonics_features(matches)
+        
+        # Add label to features
         phonics_features["label"] = row["label"]
+        
         features.append(phonics_features)
 
+    # Convert to DataFrame
     features_df = pd.DataFrame(features)
+
+    # Train and evaluate the model
     train_and_evaluate_model(features_df)
 
 if __name__ == "__main__":
     main()
 
-## tests/test_patterns.py
-# Test cases for dolphin_patterns.py
+# dolphin_patterns.py
 
-from dolphin_patterns import greedy_match, DOLPHIN_PATTERNS
+from typing import List, Dict, Tuple, Set
 
-def test_greedy_match():
-    domain = "nationalgeographic"
-    matches = greedy_match(domain, DOLPHIN_PATTERNS)
-    expected = [
-        ('n', 'consonant'), ('a', 'vowel'), ('t', 'consonant'),
-        ('ion', 'vowel'), ('al', 'vowel'), ('g', 'consonant'),
-        ('e', 'vowel'), ('o', 'vowel'), ('gr', 'consonant'),
-        ('a', 'vowel'), ('ph', 'consonant'), ('i', 'vowel'),
-        ('c', 'consonant')
-    ]
-    assert matches == expected
+# DOLPHIN patterns definition (exactly as in the paper)
+DOLPHIN_PATTERNS = {
+    "vowels": {
+        1: ["a", "e", "i", "o", "u"],
+        2: ["ai", "al", "ar", "au", "aw", "ay", "ea", "ee", "ei", 
+            "er", "eu", "ew", "ey", "ia", "ie", "ir", "oa", "oe", 
+            "oi", "oo", "or", "ou", "ow", "oy", "ue", "ui", "ur"],
+        3: ["air", "ear", "eer", "igh", "ign", "ing", "ion", "oew", "ore", "our", "ure"]
+    },
+    "consonants": {
+        1: ["b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", 
+            "p", "q", "r", "s", "t", "v", "w", "x", "y", "z"],
+        2: ["bl", "br", "ch", "ck", "cl", "cr", "dr", "fl", "fr", "gh", "gl", "gr", 
+            "kn", "ld", "lk", "mb", "mn", "mp", "nd", "ng", "nk", "nt", "ph", "pl", 
+            "pn", "pr", "ps", "qe", "qu", "rh", "sc", "sh", "sk", "sl", "sm", "sn", 
+            "sp", "st", "sw", "th", "tr", "wh", "wr"],
+        3: ["dge", "gue", "nch", "que", "shr", "spl", "spr", "squ", "str", "tch", "thr"]
+    }
+}
 
-## requirements.txt
-# Required Python libraries
-pandas
-scikit-learn
-pytest
+def greedy_match(domain_name: str, patterns: Dict) -> List[Tuple[str, str]]:
+    """
+    Implement greedy matching algorithm for DOLPHIN patterns.
+    
+    Args:
+        domain_name (str): Domain name to process
+        patterns (Dict): Dictionary of DOLPHIN patterns
+    
+    Returns:
+        List of tuples with matched substrings and their types
+    """
+    matcher = DolphinMatcher(patterns)
+    return matcher.construct_output_function(domain_name)
 
-## README.md
-# Documentation for the project
+class DolphinMatcher:
+    def __init__(self, patterns: Dict):
+        """
+        Initialize the Dolphin Matcher with predefined patterns.
+        
+        Args:
+            patterns (Dict): Dictionary of DOLPHIN patterns for vowels and consonants
+        """
+        self.patterns = patterns
+        self.max_pattern_length = max(
+            max(len(pattern) for pattern_group in patterns.values() for pattern in pattern_group)
+        )
+        
+        # Precompute all possible patterns for faster lookup
+        self.all_patterns = set()
+        for pattern_type in patterns.values():
+            for length_group in pattern_type.values():
+                self.all_patterns.update(length_group)
+    
+    def _is_valid_pattern(self, substring: str) -> bool:
+        """
+        Check if the substring is a valid DOLPHIN pattern.
+        
+        Args:
+            substring (str): Substring to check
+        
+        Returns:
+            bool: True if substring is a valid pattern, False otherwise
+        """
+        return substring in self.all_patterns
+    
+    def _get_pattern_type(self, substring: str) -> str:
+        """
+        Determine the type of pattern (vowel, consonant, or None)
+        
+        Args:
+            substring (str): Substring to check
+        
+        Returns:
+            str: Type of pattern ('vowel', 'consonant', or None)
+        """
+        for pattern_type, type_patterns in self.patterns.items():
+            for length_group in type_patterns.values():
+                if substring in length_group:
+                    return pattern_type[:-1]  # Remove 's' from 'vowels'/'consonants'
+        return None
+    
+    def construct_output_function(self, domain_name: str) -> List[Tuple[str, str]]:
+        """
+        Reconstruct the output function as described in Algorithm 1 of the paper.
+        Implements a greedy matching approach with state-based output.
+        
+        Args:
+            domain_name (str): Domain name to process
+        
+        Returns:
+            List of tuples with matched substrings and their types
+        """
+        output = []
+        i = 0
+        length = len(domain_name)
+        
+        while i < length:
+            # Try greedy matching from longest to shortest patterns
+            match_found = False
+            for pattern_length in range(min(self.max_pattern_length, length - i), 0, -1):
+                substring = domain_name[i:i + pattern_length]
+                
+                if self._is_valid_pattern(substring):
+                    pattern_type = self._get_pattern_type(substring)
+                    output.append((substring, pattern_type))
+                    i += pattern_length
+                    match_found = True
+                    break
+            
+            # If no pattern match, add individual character
+            if not match_found:
+                output.append((domain_name[i], 'neutral'))
+                i += 1
+        
+        return output
+    
+    def matching_function(self, domain_name: str) -> List[Tuple[str, str]]:
+        """
+        Implements the matching function as described in Algorithm 2 of the paper.
+        
+        Args:
+            domain_name (str): Domain name to process
+        
+        Returns:
+            List of tuples with matched substrings and their types
+        """
+        # This method can be expanded to more closely match the paper's state machine
+        # For now, it leverages the construct_output_function
+        return self.construct_output_function(domain_name)
 
-# DOLPHIN Project
+# feature_extraction.py
 
-This project implements the DOLPHIN framework for detecting DGA-based botnets using phonics-based features.
+from typing import List, Tuple, Dict
 
-## Structure
-- `dolphin_patterns.py`: Defines patterns and matching logic.
-- `feature_extraction.py`: Computes features based on DOLPHIN patterns.
-- `preprocess.py`: Preprocesses the dataset.
-- `model_training.py`: Handles training and evaluation.
-- `main.py`: Runs the pipeline.
-- `tests/`: Contains test cases.
+def compute_phonics_features(matches: List[Tuple[str, str]]) -> Dict[str, float]:
+    """
+    Extract phonics-based features from DOLPHIN pattern matching.
+    
+    Args:
+        matches (List[Tuple[str, str]]): List of matched substrings with their types
+    
+    Returns:
+        Dict[str, float]: Extracted phonics features
+    """
+    # Initialize feature dictionary
+    features = {
+        'vowel_ratio': 0.0,
+        'consonant_ratio': 0.0,
+        'neutral_ratio': 0.0,
+        'pattern_diversity': 0.0,
+        'max_pattern_length': 0.0
+    }
+    
+    # If no matches, return default features
+    if not matches:
+        return features
+    
+    # Compute feature calculations
+    total_matches = len(matches)
+    
+    # Compute type ratios
+    type_counts = {}
+    max_pattern_length = 0
+    
+    for pattern, pattern_type in matches:
+        # Track pattern type counts
+        type_counts[pattern_type] = type_counts.get(pattern_type, 0) + 1
+        
+        # Track max pattern length
+        max_pattern_length = max(max_pattern_length, len(pattern))
+    
+    # Calculate ratios
+    features['vowel_ratio'] = type_counts.get('vowel', 0) / total_matches
+    features['consonant_ratio'] = type_counts.get('consonant', 0) / total_matches
+    features['neutral_ratio'] = type_counts.get('neutral', 0) / total_matches
+    
+    # Pattern diversity (number of unique pattern types)
+    features['pattern_diversity'] = len(set(p for _, p in matches)) / total_matches
+    
+    # Max pattern length
+    features['max_pattern_length'] = max_pattern_length
+    
+    return features
 
-## Usage
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+# model_training.py
 
-2. Run the pipeline:
-   ```bash
-   python main.py
-   ```
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+import numpy as np
 
-3. Run tests:
-   ```bash
-   pytest tests/
+def train_and_evaluate_model(features_df: pd.DataFrame):
+    """
+    Train and evaluate a machine learning model on the extracted features.
+    
+    Args:
+        features_df (pd.DataFrame): DataFrame containing extracted features and labels
+    """
+    # Separate features and labels
+    X = features_df.drop('label', axis=1)
+    y = features_df['label']
+    
+    # Split the data
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+    
+    # Scale the features
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    # Train Random Forest Classifier
+    rf_classifier = RandomForestClassifier(
+        n_estimators=100, 
+        random_state=42, 
+        class_weight='balanced'
+    )
+    rf_classifier.fit(X_train_scaled, y_train)
+    
+    # Predictions
+    y_pred = rf_classifier.predict(X_test_scaled)
+    
+    # Print detailed evaluation metrics
+    print("Classification Report:")
+    print(classification_report(y_test, y_pred))
+    
+    print("\nConfusion Matrix:")
+    print(confusion_matrix(y_test, y_pred))
+    
+    # Feature importance
+    feature_importance = pd.DataFrame({
+        'feature': X.columns,
+        'importance': rf_classifier.feature_importances_
+    }).sort_values('importance', ascending=False)
+    print("\nFeature Importance:")
+    print(feature_importance)
+    
+    return rf_classifier, scaler
+
+# preprocess.py
+
+import pandas as pd
+from typing import Set
+
+def preprocess_dataset(dataset_path: str, whitelist: Set[str]) -> pd.DataFrame:
+    """
+    Preprocess the dataset by filtering and cleaning domain data.
+    
+    Args:
+        dataset_path (str): Path to the input dataset
+        whitelist (Set[str]): Set of whitelisted domains
+    
+    Returns:
+        pd.DataFrame: Preprocessed dataset with filtered domains
+    """
+    # Read the dataset (assuming a simple format with domain and label)
+    try:
+        # Try reading as CSV first
+        data = pd.read_csv(dataset_path, names=["domain_name", "label"])
+    except:
+        # If not CSV, try reading as text file
+        data = pd.read_csv(dataset_path, header=None, names=["domain_name", "label"], sep='\s+')
+    
+    # Preprocess domain names
+    data['domain_name'] = data['domain_name'].str.lower().str.strip()
+    
+    # Filter out domains in whitelist
+    data = data[~data['domain_name'].isin(whitelist)]
+    
+    # Remove any rows with missing data
+    data = data.dropna()
+    
+    return data
