@@ -15,29 +15,29 @@ def preprocess_dataset(dataset_path: str, whitelist: Set[str]) -> pd.DataFrame:
         pd.DataFrame: Preprocessed dataset with filtered domains
     """
     try:
-        # Try reading as CSV first
-        data = pd.read_csv(dataset_path, names=["domain_name", "label"])
+        # Read the dataset with header handling to ensure correct column names
+        data = pd.read_csv(dataset_path, header=0)  # header=0 tells pandas to use the first row as header
     except Exception as e:
-        print(f"Error reading as CSV: {e}. Attempting to read as text file...")
-        try:
-            # If not CSV, try reading as text file with regex for whitespace separator
-            data = pd.read_csv(dataset_path, header=None, names=["domain_name", "label"], sep=r'\s+', engine="python")
-        except Exception as e:
-            print(f"Error reading dataset as text file: {e}")
-            raise
-
-    # Ensure label column exists
-    if "label" not in data.columns or data["label"].isnull().all():
+        print(f"Error reading dataset: {e}")
+        raise
+    
+    # Ensure the dataset contains the expected columns
+    if "domain_name" not in data.columns or "label" not in data.columns:
+        print("Dataset missing expected columns. Assigning default headers.")
+        data.columns = ["domain_name", "label"]  # In case columns are not correctly set
+    
+    # Check if 'label' column exists and assign default labels if missing
+    if data['label'].isnull().all():
         print("No labels found in dataset. Assigning default labels (0).")
-        data["label"] = 0  # Default label assignment
+        data['label'] = 0  # Default label assignment
 
-    # Preprocess domain names
+    # Preprocess domain names (strip whitespace and convert to lowercase)
     data['domain_name'] = data['domain_name'].str.lower().str.strip()
 
-    # Filter out domains in whitelist
+    # Filter out domains in the whitelist
     data = data[~data['domain_name'].isin(whitelist)]
 
-    # Remove any rows with missing data
-    data = data.dropna()
+    # Remove any rows with missing values in either 'domain_name' or 'label'
+    data = data.dropna(subset=['domain_name', 'label'])
 
     return data
