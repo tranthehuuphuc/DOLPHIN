@@ -15,7 +15,7 @@ from model_training import train_and_evaluate_model
 
 def main():
     # Default paths (can be modified as needed)
-    dataset_path = "1000.txt"
+    dataset_path = "data.csv"
     whitelist_path = "whitelist.txt"
 
     # Load whitelist domains
@@ -107,7 +107,10 @@ class DolphinMatcher:
         """
         self.patterns = patterns
         self.max_pattern_length = max(
-            max(len(pattern) for pattern_group in patterns.values() for pattern in pattern_group)
+            len(pattern) 
+            for pattern_type in patterns.values() 
+            for length_group in pattern_type.values() 
+            for pattern in length_group
         )
         
         # Precompute all possible patterns for faster lookup
@@ -247,64 +250,65 @@ def compute_phonics_features(matches: List[Tuple[str, str]]) -> Dict[str, float]
     
     return features
 
-# model_training.py
-
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report, confusion_matrix
 import numpy as np
 
-def train_and_evaluate_model(features_df: pd.DataFrame):
-    """
-    Train and evaluate a machine learning model on the extracted features.
-    
-    Args:
-        features_df (pd.DataFrame): DataFrame containing extracted features and labels
-    """
+def train_and_evaluate_model(features_df: pd.DataFrame, unseen_data_path=None):
     # Separate features and labels
     X = features_df.drop('label', axis=1)
     y = features_df['label']
     
-    # Split the data
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+    # Create a pipeline for scaling and classification
+    pipeline = Pipeline([
+        ('scaler', StandardScaler()),
+        ('classifier', RandomForestClassifier(
+            n_estimators=100,
+            random_state=42,
+            class_weight='balanced',
+            max_depth=10,
+            min_samples_split=5
+        ))
+    ])
     
-    # Scale the features
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    # Perform 5-fold cross-validation
+    cross_val_scores = cross_val_score(pipeline, X, y, cv=5)
+    print("Cross-validation scores:", cross_val_scores)
+    print("Average cross-validation score:", np.mean(cross_val_scores))
     
-    # Train Random Forest Classifier
-    rf_classifier = RandomForestClassifier(
-        n_estimators=100, 
-        random_state=42, 
-        class_weight='balanced'
-    )
-    rf_classifier.fit(X_train_scaled, y_train)
+    # Train-test split for final evaluation
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
     
-    # Predictions
-    y_pred = rf_classifier.predict(X_test_scaled)
-    
-    # Print detailed evaluation metrics
-    print("Classification Report:")
+    # Detailed metrics
+    print("\nClassification Report:")
     print(classification_report(y_test, y_pred))
-    
     print("\nConfusion Matrix:")
     print(confusion_matrix(y_test, y_pred))
+
+    # FPR and FNR
+    tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+    accuracy = (tp + tn) / (tp + tn + fp + fn)
+    fpr = fp / (fp + tn)
+    fnr = fn / (tp + fn)
+    print(f"\nAccuracy: {accuracy:.4f}")
+    print(f"False Positive Rate (FPR): {fpr:.4f}")
+    print(f"False Negative Rate (FNR): {fnr:.4f}")
     
     # Feature importance
+    rf_classifier = pipeline.named_steps['classifier']
     feature_importance = pd.DataFrame({
         'feature': X.columns,
         'importance': rf_classifier.feature_importances_
-    }).sort_values('importance', ascending=False)
+    }).sort_values(by='importance', ascending=False)
     print("\nFeature Importance:")
     print(feature_importance)
     
-    return rf_classifier, scaler
-
 # preprocess.py
 
 import pandas as pd
@@ -321,21 +325,30 @@ def preprocess_dataset(dataset_path: str, whitelist: Set[str]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Preprocessed dataset with filtered domains
     """
-    # Read the dataset (assuming a simple format with domain and label)
     try:
-        # Try reading as CSV first
-        data = pd.read_csv(dataset_path, names=["domain_name", "label"])
-    except:
-        # If not CSV, try reading as text file
-        data = pd.read_csv(dataset_path, header=None, names=["domain_name", "label"], sep='\s+')
+        # Read the dataset with header handling to ensure correct column names
+        data = pd.read_csv(dataset_path, header=0)  # header=0 tells pandas to use the first row as header
+    except Exception as e:
+        print(f"Error reading dataset: {e}")
+        raise
     
-    # Preprocess domain names
+    # Ensure the dataset contains the expected columns
+    if "domain_name" not in data.columns or "label" not in data.columns:
+        print("Dataset missing expected columns. Assigning default headers.")
+        data.columns = ["domain_name", "label"]  # In case columns are not correctly set
+    
+    # Check if 'label' column exists and assign default labels if missing
+    if data['label'].isnull().all():
+        print("No labels found in dataset. Assigning default labels (0).")
+        data['label'] = 0  # Default label assignment
+
+    # Preprocess domain names (strip whitespace and convert to lowercase)
     data['domain_name'] = data['domain_name'].str.lower().str.strip()
-    
-    # Filter out domains in whitelist
+
+    # Filter out domains in the whitelist
     data = data[~data['domain_name'].isin(whitelist)]
-    
-    # Remove any rows with missing data
-    data = data.dropna()
-    
+
+    # Remove any rows with missing values in either 'domain_name' or 'label'
+    data = data.dropna(subset=['domain_name', 'label'])
+
     return data
