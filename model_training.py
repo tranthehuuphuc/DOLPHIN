@@ -1,5 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
@@ -14,12 +16,12 @@ def train_and_evaluate_model(features_df: pd.DataFrame, unseen_data_path=None):
     # Create a pipeline for scaling and classification
     pipeline = Pipeline([
         ('scaler', StandardScaler()),
-        ('classifier', RandomForestClassifier(
-            n_estimators=100,
-            random_state=42,
-            class_weight='balanced',
-            max_depth=10,
-            min_samples_split=5
+        ('classifier', DecisionTreeClassifier(         
+            # n_estimators=10,
+            # random_state=42,
+            # class_weight='balanced',
+            # max_depth=2,
+            # min_samples_split=5
         ))
     ])
     
@@ -32,6 +34,7 @@ def train_and_evaluate_model(features_df: pd.DataFrame, unseen_data_path=None):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
+    #MORE AND MORE DATA, VALIDATION SET
     
     # Detailed metrics
     print("\nClassification Report:")
