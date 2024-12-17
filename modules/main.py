@@ -9,8 +9,8 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
 from preprocess import preprocess_dataset
-from dolphin_patterns import greedy_match, DOLPHIN_PATTERNS
-from feature_extraction import compute_phonics_features
+from modules.dolphin_patterns import greedy_match, DOLPHIN_PATTERNS
+from modules.feature_extraction import compute_phonics_features
 from model_training import train_and_evaluate_model
 
 def main():

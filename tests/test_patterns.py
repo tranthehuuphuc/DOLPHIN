@@ -4,7 +4,7 @@ import os
 # Add the root directory to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from dolphin_patterns import greedy_match, DOLPHIN_PATTERNS
+from modules.dolphin_patterns import greedy_match, DOLPHIN_PATTERNS
 
 def test_greedy_match():
     # Test case: Single domain name
