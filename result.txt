@@ -1,0 +1,143 @@
+DATASET 1:
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.84      0.96      0.89      4000
+           1       0.95      0.82      0.88      4000
+
+    accuracy                           0.89      8000
+   macro avg       0.89      0.89      0.89      8000
+weighted avg       0.89      0.89      0.89      8000
+
+
+Confusion Matrix:
+[[3823  177]
+ [ 731 3269]]
+
+Accuracy: 0.8865
+False Positive Rate (FPR): 0.0442
+False Negative Rate (FNR): 0.1827
+
+Feature Importance:
+              feature  importance
+0         vowel_ratio    0.341033
+3   pattern_diversity    0.320700
+1     consonant_ratio    0.189001
+2       neutral_ratio    0.118377
+4  max_pattern_length    0.030888
+-----------------------------------------------------
+
+DATASET 2:
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.84      0.96      0.90      4000
+           1       0.95      0.82      0.88      4000
+
+    accuracy                           0.89      8000
+   macro avg       0.90      0.89      0.89      8000
+weighted avg       0.90      0.89      0.89      8000
+
+
+Confusion Matrix:
+[[3822  178]
+ [ 715 3285]]
+
+Accuracy: 0.8884
+False Positive Rate (FPR): 0.0445
+False Negative Rate (FNR): 0.1787
+
+Feature Importance:
+              feature  importance
+0         vowel_ratio    0.339613
+3   pattern_diversity    0.326676
+1     consonant_ratio    0.190360
+2       neutral_ratio    0.112409
+4  max_pattern_length    0.030942
+-----------------------------------------------------
+
+DATASET 3:
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.85      0.95      0.90      4000
+           1       0.95      0.83      0.89      4000
+
+    accuracy                           0.89      8000
+   macro avg       0.90      0.89      0.89      8000
+weighted avg       0.90      0.89      0.89      8000
+
+
+Confusion Matrix:
+[[3819  181]
+ [ 667 3333]]
+
+Accuracy: 0.8940
+False Positive Rate (FPR): 0.0452
+False Negative Rate (FNR): 0.1668
+
+Feature Importance:
+              feature  importance
+0         vowel_ratio    0.330842
+3   pattern_diversity    0.329912
+1     consonant_ratio    0.191931
+2       neutral_ratio    0.110604
+4  max_pattern_length    0.036711
+-----------------------------------------------------
+
+DATASET 4:
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.84      0.96      0.89      4000
+           1       0.95      0.82      0.88      4000
+
+    accuracy                           0.89      8000
+   macro avg       0.89      0.89      0.89      8000
+weighted avg       0.89      0.89      0.89      8000
+
+
+Confusion Matrix:
+[[3822  178]
+ [ 723 3277]]
+
+Accuracy: 0.8874
+False Positive Rate (FPR): 0.0445
+False Negative Rate (FNR): 0.1807
+
+Feature Importance:
+              feature  importance
+0         vowel_ratio    0.336688
+3   pattern_diversity    0.333728
+1     consonant_ratio    0.186989
+2       neutral_ratio    0.109390
+4  max_pattern_length    0.033204
+-----------------------------------------------------
+
+ALL
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.85      0.95      0.89     16000
+           1       0.94      0.83      0.88     16000
+
+    accuracy                           0.89     32000
+   macro avg       0.89      0.89      0.89     32000
+weighted avg       0.89      0.89      0.89     32000
+
+
+Confusion Matrix:
+[[15163   837]
+ [ 2770 13230]]
+
+Accuracy: 0.8873
+False Positive Rate (FPR): 0.0523
+False Negative Rate (FNR): 0.1731
+
+Feature Importance:
+              feature  importance
+0         vowel_ratio    0.340816
+3   pattern_diversity    0.335316
+1     consonant_ratio    0.190602
+2       neutral_ratio    0.101073
+4  max_pattern_length    0.032193
