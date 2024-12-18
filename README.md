@@ -1,6 +1,6 @@
-# DOLPHIN Pattern Detection and Feature Extraction
+# Detecting DGA-based botnets through effective phonics-based features
 
-This repository implements a system for detecting DOLPHIN patterns in domain names, extracting features based on these patterns, and training a classification model to identify malicious domains. The project is based on the paper ["DOLPHIN: Phonetics-Aware Detection of Malicious Domain Names"](https://aquatoney.github.io/files/dolphin-fgcs23-zhao.pdf) by Zhao et al., published in *Future Generation Computer Systems (2023)*. It includes modules for preprocessing datasets, applying pattern matching algorithms, extracting features, and training machine learning models.
+This repository implements a system for detecting DOLPHIN patterns in domain names, extracting features based on these patterns, and training a classification model to identify malicious domains. The project is based on the paper ["Detecting DGA-based botnets through effective phonics-based features"](https://aquatoney.github.io/files/dolphin-fgcs23-zhao.pdf) by Zhao, D., Li, H., Sun, X., & Tang, Y., published in *Future Generation Computer Systems (2023)*. It includes modules for preprocessing datasets, applying pattern matching algorithms, extracting features, and training machine learning models.
 
 ## Features
 
