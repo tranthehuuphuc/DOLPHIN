@@ -1,4 +1,7 @@
 # Required Python libraries
+numpy
 pandas
+seaborn
 scikit-learn
-pytest
+tldextract
+matplotlib
